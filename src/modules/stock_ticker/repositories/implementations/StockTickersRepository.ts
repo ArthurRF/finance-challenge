@@ -2,6 +2,7 @@ import prisma from "../../../../infra/database/prisma";
 import { StockTicker, Tracks } from "@prisma/client";
 import { IStockTickersRepository } from "../IStockTickersRepository";
 import { ICreateTrackDTO } from "../../dtos/ICreateTrackDTO";
+import { IFindCurrentDataStockTickersDTO } from "modules/stock_ticker/dtos/IFindCurrentDataStockTickersDTO";
 
 
 export class StockTickersRepository implements IStockTickersRepository {
@@ -47,5 +48,55 @@ export class StockTickersRepository implements IStockTickersRepository {
         Tracks: true
       }
     })
+  }
+
+  async findCurrentDataBySlug({
+    slug,
+    end,
+    min_volume,
+    start
+  }: IFindCurrentDataStockTickersDTO): Promise<StockTicker> {
+    let whereInclude: any;
+
+    if(end) {
+      whereInclude = {
+        lastUpdate: {
+          lte: new Date(end)
+        }
+      }
+    }
+
+    if(start) {
+      whereInclude = {
+        lastUpdate: {
+          gte: new Date(start)
+        }
+      }
+    }
+
+    if(min_volume) {
+      whereInclude = {
+        volume: {
+          gte: min_volume
+        }
+      }
+    }
+
+    const data = await prisma.stockTicker.findFirst({
+      where: {
+        slug
+      },
+      include: {
+        Tracks: {
+          where: whereInclude,
+          orderBy: {
+            lastUpdate: "desc"
+          },
+          take: 1
+        }
+      }
+    });
+
+    return data;
   }
 }

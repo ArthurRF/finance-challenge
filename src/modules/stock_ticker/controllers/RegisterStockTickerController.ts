@@ -33,6 +33,6 @@ export class RegisterStockTickerController {
       job.start();
     }
 
-    return res.status(200).send(data);
+    return res.status(201).send(data);
   }
 }
