@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model StockTicker {
+  slug String @id @unique
+
+  allTracks Tracks[]
+
+  @@map("stock_ticker")
+}
+
+model Tracks {
+  id             String   @id @default(uuid())
+  stockTikerSlug String
+  open           Float
+  high           Float
+  low            Float
+  close          Float
+  volume         Float
+  lastUpdate     DateTime
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now())
+  stock_tiker StockTicker @relation(fields: [stockTikerSlug], references: [slug])
+
+  @@map("tracks")
+}
