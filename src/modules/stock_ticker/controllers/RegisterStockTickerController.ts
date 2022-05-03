@@ -1,16 +1,13 @@
-import axios from "axios";
 import { Request, Response } from "express";
-import prisma from "../../../infra/database/prisma";
 import { container, injectable } from "tsyringe";
 import { RegisterStockTickerService } from "../services/RegisterStockTickerService";
-
+import { CronJob } from "cron";
 
 @injectable()
 export class RegisterStockTickerController {
 
   async handle(req: Request, res: Response): Promise<Response> {
     const { stockTicker } = req.body;
-    const alphaApiKey = process.env.ALPHA_API_KEY as string;
 
     const registerStockTickerService = container.resolve(
       RegisterStockTickerService
@@ -22,6 +19,20 @@ export class RegisterStockTickerController {
 
     const data = await registerStockTickerService.execute(stockTicker);
 
-    return res.status(200).send('');
+    if (data) {
+      const job = new CronJob(
+        '*/10 * * * *',
+        async function() {
+          await registerStockTickerService.execute(stockTicker)
+        },
+        null,
+        true,
+        'America/Los_Angeles'
+      );
+
+      job.start();
+    }
+
+    return res.status(200).send(data);
   }
 }
